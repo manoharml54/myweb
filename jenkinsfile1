@@ -1,0 +1,44 @@
+node
+{
+    def mavenHome=tool name: "maven3.6.3"
+    
+    stage('checkoutcode')
+    {
+        git branch: 'development', credentialsId: 'dd867369-21d6-47de-9594-5c11c1fddccf', url: 'https://github.com/manoharml54/maven-web-application.git'
+    }
+    
+    stage('build')
+    {
+        sh "${mavenHome}/bin/mvn clean package"
+    }
+    
+    stage('ExecuteSoanrQubeReport')
+    {
+        sh  "${mavenHome}/bin/mvn sonar:sonar"
+    }
+ 
+    stage('UploadArtifactintoNexus')
+    {
+       sh  "${mavenHome}/bin/mvn deploy"
+    }
+    
+    stage('DeployAppintoTomcat')
+ {
+ sshagent(['9ac0a4d8-1902-4698-9d6c-31ceccc2f25d']) {
+  sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.112.55.205:/opt/apache-tomcat-9.0.65/webapps"
+ }
+ }
+ 
+ stage('SendEmailNotification')
+ {
+     mail bcc: '', body: '''Build over
+
+
+Regards,
+Manohar''', cc: '', from: '', replyTo: '', subject: 'Buildover', to: 'manohar.ml54@gmail.com'
+
+ }
+     
+    
+
+}
